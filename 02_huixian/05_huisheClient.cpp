@@ -12,7 +12,7 @@
 #include <sys/select.h>
 using namespace std;
 
-// 原始版本
+// 1.原始版本
 // void str_cli(FILE *fp,int fd){
 //     char buf[1500];
 //     int len;
@@ -27,7 +27,7 @@ using namespace std;
 //     }
 // }
 
-// // select版本1
+// 2.select版本1
 // void str_cli(FILE *fp,int fd){
 //     char buf[1024];
 //     bzero(buf, 1024);
@@ -66,7 +66,7 @@ using namespace std;
 //     }
 // }
 
-// select版本2 加入了shutdown()函数
+// 3.select版本2 加入了shutdown()函数
 void str_cli(FILE *fp,int fd){
     char buf[1024];
     bzero(buf, 1024);

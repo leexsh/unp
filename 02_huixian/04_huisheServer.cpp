@@ -41,7 +41,7 @@ void str_echo(int fd){
 }
 
 
-// 原始的采用fork()的多进程并发服务器模型main函数
+// 1.原始的采用fork()的多进程并发服务器模型main函数
 
 // int main(){
 //     // 创建套接字
@@ -97,7 +97,7 @@ void str_echo(int fd){
 // }
 
 
-// 采用I/O复用的select模型的服务器模型main函数
+// 2.采用I/O复用的select模型的服务器模型main函数
 int main(){
     // 创建套接字
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
