@@ -8,9 +8,10 @@
 ### 04_huisheServer:回显客户端内容的服务器代码  
 #### 代码组成：
 1. 利用fork()实现的多进程服务器端的代码
-2. 利用select函数实现的I/O模型服务器端代码
-3. poll等等。。。
+2. 利用select函数实现的I/O复用模型服务器端代码
 #### [select介绍(来自CSDN)](https://blog.csdn.net/turkeyzhou/article/details/8609360)
+3. 利用poll()函数实现的I/O复用服务器端代码
+#### [poll机制介绍(来自CSDN)](https://blog.csdn.net/q2519008/article/details/84262193)
 ### 05_huisheClient：unix中服务器回显客户端内容的客户端代码
 #### 代码组成：
 1. 最原始版本
