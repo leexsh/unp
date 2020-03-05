@@ -13,6 +13,9 @@
 #include <sys/select.h>
 #include <time.h>
 #include <poll.h>
+#include <sys/epoll.h>
+#include <iostream>
+
 void sig_child(int singno){
     pid_t pid;
     int stat;
@@ -206,7 +209,97 @@ void str_echo(int fd){
 // }
 
 
-// 3.采用I/O复用的poll模型的服务器模型main函数
+// // 3.采用I/O复用的poll模型的服务器模型main函数
+// int main(){
+//     // 创建套接字
+//     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+//     //  结构体
+//     struct sockaddr_in addr;
+//     addr.sin_family = AF_INET;
+//     addr.sin_port = htons(8090);
+//     addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+//     // 进程ID
+//     pid_t pid;
+
+//     // 绑定
+//     bind(sockfd, (struct sockaddr*)&addr, sizeof(addr));
+//     // 监听
+//     listen(sockfd, 128);
+//     signal(SIGCHLD, sig_child);
+
+//     // ---poll操作----
+//     // poll结合
+//     struct pollfd arrfd[4096];
+//     arrfd[0].fd = sockfd;
+//     // 监听服务器端接口
+//     arrfd[0].events = POLLIN;
+//     // 初始化
+//     for(int i = 1; i < 4096; ++i){
+//         arrfd[i].fd = -1;
+//     }
+//     // 最大的客户端描述符数目
+//     int imax = 0;
+//     int i;
+//     while(1){
+        
+//         // 客户端连接描述符
+//         int connfd;
+//         struct sockaddr_in caddr;
+//         socklen_t len = sizeof(caddr);
+//         // poll函数 返回就绪数目 poll(监听集合，最大的监听数目，事件)
+//         int ready = poll(arrfd,imax + 1, -1);
+//         // 服务器监听端口就绪
+//         if(arrfd[0].revents & POLLIN){
+//             // 客户端连接
+//             connfd = accept(sockfd, (struct sockaddr*)&caddr, &len);
+//             // 保存客户端的描述符
+           
+//             for(i = 1;i<4096; ++i){
+//                 if(arrfd[i].fd == -1){
+//                     arrfd[i].fd = connfd;
+//                     break;
+//                 }
+//             }
+//             arrfd[i].events = POLLIN;
+//             // 更新当前的最大描述符数目
+//             if(i > imax){
+//                 imax = i;
+//             }
+//             if(--ready <= 0){
+//                 continue;
+//             }
+//         }
+//         // 客户端准备就绪
+//         for(i = 1; i<= imax; ++i){
+//             if(arrfd[i].fd == -1){
+//                 continue;
+//             }
+//             int n;
+//             char buf[1500];
+//             // 客户端有读事件
+//             if(arrfd[i].revents & POLLIN){
+//                 // 读取内容大于0 回显给客户端
+//                 if((n = read(arrfd[i].fd, buf, 1500)) > 0){
+//                     write(arrfd[i].fd, buf, n);
+//                 }
+//                 // 关闭客户端 并回复默认的fd
+//                 else if(n == 0){
+//                     close(arrfd[i].fd);
+//                     arrfd[i].fd = -1;
+//                 }
+//                 if(--ready <= 0){
+//                     break;
+//                 }
+//             }
+//         }
+     
+//     }
+
+// }
+
+// 3.采用I/O复用的epoll模型的服务器模型main函数
 int main(){
     // 创建套接字
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -226,72 +319,53 @@ int main(){
     listen(sockfd, 128);
     signal(SIGCHLD, sig_child);
 
-    // ---poll操作----
-    // poll结合
-    struct pollfd arrfd[4096];
-    arrfd[0].fd = sockfd;
-    // 监听服务器端接口
-    arrfd[0].events = POLLIN;
-    // 初始化
-    for(int i = 1; i < 4096; ++i){
-        arrfd[i].fd = -1;
-    }
-    // 最大的客户端描述符数目
-    int imax = 0;
-    int i;
-    while(1){
-        
-        // 客户端连接描述符
-        int connfd;
-        struct sockaddr_in caddr;
-        socklen_t len = sizeof(caddr);
-        // poll函数 返回就绪数目 poll(监听集合，最大的监听数目，事件)
-        int ready = poll(arrfd,imax + 1, -1);
-        // 服务器监听端口就绪
-        if(arrfd[0].revents & POLLIN){
-            // 客户端连接
-            connfd = accept(sockfd, (struct sockaddr*)&caddr, &len);
-            // 保存客户端的描述符
-           
-            for(i = 1;i<4096; ++i){
-                if(arrfd[i].fd == -1){
-                    arrfd[i].fd = connfd;
-                    break;
-                }
-            }
-            arrfd[i].events = POLLIN;
-            // 更新当前的最大描述符数目
-            if(i > imax){
-                imax = i;
-            }
-            if(--ready <= 0){
-                continue;
-            }
-        }
-        // 客户端准备就绪
-        for(i = 1; i<= imax; ++i){
-            if(arrfd[i].fd == -1){
-                continue;
-            }
-            int n;
-            char buf[1500];
-            // 客户端有读事件
-            if(arrfd[i].revents & POLLIN){
-                // 读取内容大于0 回显给客户端
-                if((n = read(arrfd[i].fd, buf, 1500)) > 0){
-                    write(arrfd[i].fd, buf, n);
-                }
-                // 关闭客户端 并回复默认的fd
-                else if(n == 0){
-                    close(arrfd[i].fd);
-                    arrfd[i].fd = -1;
-                }
-                if(--ready <= 0){
-                    break;
-                }
-            }
-        }
-     
-    }
+    // ---epoll操作----
+    // epoll事件的就绪数组
+    struct epoll_event readyArr[1000];
+    // 监听集合
+    int epoll_fd = epoll_create(1000);
+    
+    // 将服务器接收端口设置为监听项
+    struct epoll_event epollTemp;
+    epollTemp.events = EPOLLIN;
+    epollTemp.data.fd = sockfd;
 
+    // 加入到监听集合
+    epoll_ctl(epoll_fd,EPOLL_CTL_ADD,sockfd,&epollTemp);
+    struct sockaddr_in caddr;
+    socklen_t len = sizeof(caddr);
+    while(1){
+        int ready = epoll_wait(epoll_fd, readyArr,1000,-1);
+        while(ready){
+            int i = 0;
+            // 客户端来连接服务器
+            if(readyArr[i].data.fd == sockfd){
+                int connfd = accept(sockfd, (struct sockaddr*)&caddr, &len);
+                if(connfd > 0){
+                    std::cout<<"连接成功"<<std::endl;
+                }
+                // 创建连接接入到监听集合
+                epollTemp.events = EPOLLIN;
+                epollTemp.data.fd = connfd;
+                epoll_ctl(epoll_fd,EPOLL_CTL_ADD,connfd, &epollTemp);
+            
+            }
+            else{
+                // 回显客户端
+                char buf[1500];
+                int n ;
+                n = read(readyArr[i].data.fd,buf, 1500);
+                if(n > 0){
+                    write(readyArr[i].data.fd, buf,n);
+                }
+                else{
+                    close(readyArr[i].data.fd);
+                    epoll_ctl(epoll_fd,EPOLL_CTL_DEL, readyArr[i].data.fd, NULL);
+                }
+            }
+            --ready;
+            ++i;
+        }
+    }
+    return 0;
 }
